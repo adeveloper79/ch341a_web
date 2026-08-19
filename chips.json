@@ -1,0 +1,71 @@
+{
+  "239": {
+    "name": "Winbond",
+    "chips": {
+      "16405": { "name": "W25Q16", "size": 2097152 },
+      "16406": { "name": "W25Q32", "size": 4194304 },
+      "16407": { "name": "W25Q64", "size": 8388608 },
+      "16408": { "name": "W25Q128", "size": 16777216 },
+      "16409": { "name": "W25Q256", "size": 33554432 }
+    }
+  },
+  "194": {
+    "name": "Macronix (MXIC)",
+    "chips": {
+      "8213": { "name": "MX25L16", "size": 2097152 },
+      "8214": { "name": "MX25L32", "size": 4194304 },
+      "8215": { "name": "MX25L64", "size": 8388608 },
+      "8216": { "name": "MX25L128", "size": 16777216 },
+      "8217": { "name": "MX25L256", "size": 33554432 }
+    }
+  },
+  "32": {
+    "name": "Micron / Numonyx",
+    "chips": {
+      "47638": { "name": "N25Q032A", "size": 4194304 },
+      "47639": { "name": "N25Q064A", "size": 8388608 },
+      "47640": { "name": "N25Q128A", "size": 16777216 },
+      "47641": { "name": "N25Q256A", "size": 33554432 }
+    }
+  },
+  "200": {
+    "name": "GigaDevice",
+    "chips": {
+      "16405": { "name": "GD25Q16", "size": 2097152 },
+      "16406": { "name": "GD25Q32", "size": 4194304 },
+      "16407": { "name": "GD25Q64", "size": 8388608 },
+      "16408": { "name": "GD25Q128", "size": 16777216 },
+      "16409": { "name": "GD25Q256", "size": 33554432 }
+    }
+  },
+  "1": {
+    "name": "Spansion / Cypress",
+    "chips": {
+      "8215": { "name": "S25FL064", "size": 8388608 },
+      "8216": { "name": "S25FL128", "size": 16777216 },
+      "8217": { "name": "S25FL256", "size": 33554432 }
+    }
+  },
+  "31": {
+    "name": "Atmel / Adesto",
+    "chips": {
+      "17154": { "name": "AT25DF161", "size": 2097152 },
+      "17155": { "name": "AT25DF321", "size": 4194304 },
+      "17156": { "name": "AT25DF641", "size": 8388608 }
+    }
+  },
+  "191": {
+    "name": "SST (Silicon Storage Tech)",
+    "chips": {
+      "10241": { "name": "SST25VF016B", "size": 2097152 },
+      "10242": { "name": "SST25VF032B", "size": 4194304 },
+      "10243": { "name": "SST25VF064C", "size": 8388608 }
+    }
+  },
+  "94": {
+    "name": "Zbit Semiconductor",
+    "chips": {
+      "24595": { "name": "ZB25VQ32", "size": 4194304 }
+    }
+  }
+}

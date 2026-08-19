@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CH341A Web Programmer</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .terminal-scroll::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    .terminal-scroll::-webkit-scrollbar-track {
+      background: #1e1e1e;
+    }
+    .terminal-scroll::-webkit-scrollbar-thumb {
+      background: #444;
+      border-radius: 4px;
+    }
+    .terminal-scroll::-webkit-scrollbar-thumb:hover {
+      background: #666;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+  <!-- Header -->
+  <header class="bg-slate-800 border-b border-slate-700 py-3 px-6 shadow-lg flex justify-between items-center flex-wrap gap-4">
+    <div class="flex items-center space-x-3">
+      <div class="bg-indigo-600 p-2 rounded-lg text-white">
+        <i data-lucide="cpu" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold tracking-tight">CH341A Web Programmer</h1>
+        <p class="text-xs text-slate-400">WebUSB SPI Programmer</p>
+      </div>
+    </div>
+    
+    <!-- Connection Controls in Header -->
+    <div class="flex items-center space-x-3">
+      <button id="btn-connect" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2 px-4 rounded-lg transition duration-150 flex items-center gap-1.5 shadow-sm">
+        <i data-lucide="link" class="w-3.5 h-3.5"></i> Connect
+      </button>
+      <button id="btn-disconnect" disabled class="bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:hover:bg-slate-700 text-slate-300 text-xs font-semibold py-2 px-4 rounded-lg transition duration-150 flex items-center gap-1.5">
+        <i data-lucide="link-2" class="w-3.5 h-3.5"></i> Disconnect
+      </button>
+      
+      <div id="connection-badge" class="flex items-center space-x-1.5 bg-rose-950/40 border border-rose-500/30 text-rose-400 px-3 py-1.5 rounded-full text-xs font-semibold">
+        <span id="badge-dot" class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+        <span id="connection-status-text">Disconnected</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+    
+    <!-- Left Column: Info & Identification (Sidebar) -->
+    <div class="space-y-6 lg:col-span-1">
+      
+      <!-- Chip Identification -->
+      <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-md space-y-4">
+        <h2 class="text-md font-semibold flex items-center gap-2 text-indigo-400 border-b border-slate-700 pb-2">
+          <i data-lucide="cpu" class="w-4 h-4"></i> Chip ID
+        </h2>
+        <div class="space-y-3">
+          <button id="btn-detect" disabled class="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:hover:bg-emerald-600 text-white text-xs font-semibold py-2 px-4 rounded-lg transition duration-150 flex items-center justify-center gap-1.5 shadow-sm">
+            <i data-lucide="search" class="w-3.5 h-3.5"></i> Detect Chip
+          </button>
+          
+          <div class="bg-slate-900/60 rounded-lg p-3 text-xs space-y-2 border border-slate-700/50">
+            <div class="flex justify-between"><span class="text-slate-400">JEDEC ID:</span> <span id="chip-jedec" class="font-mono text-slate-200 font-bold">-</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Brand:</span> <span id="chip-vendor" class="font-semibold text-slate-200">-</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Chip Name:</span> <span id="chip-name" class="font-semibold text-slate-200">-</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Capacity:</span> <span id="chip-size" class="font-semibold text-slate-200">-</span></div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1">Override Size (Bytes)</label>
+            <input type="number" id="input-override-size" value="4194304" step="1048576" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Device & Driver Info -->
+      <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-md space-y-4">
+        <h2 class="text-md font-semibold flex items-center gap-2 text-indigo-400 border-b border-slate-700 pb-2">
+          <i data-lucide="info" class="w-4 h-4"></i> Driver Info & Setup
+        </h2>
+        <div class="space-y-3">
+          <div class="bg-slate-900/60 rounded-lg p-3 text-xs space-y-2 border border-slate-700/50">
+            <div class="flex justify-between"><span class="text-slate-400">Product:</span> <span id="info-product" class="font-medium text-slate-300 truncate max-w-[120px]">-</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Serial No:</span> <span id="info-serial" class="font-mono text-slate-300 truncate max-w-[120px]">-</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Speed:</span> <span id="info-speed" class="font-mono text-slate-300">-</span></div>
+          </div>
+
+          <div class="text-[11px] text-slate-400 bg-slate-950/40 p-3 rounded-lg border border-slate-800 space-y-1.5">
+            <p class="font-semibold text-slate-300">How to Setup:</p>
+            <ul class="list-disc pl-4 space-y-1">
+              <li>Ensure jumper is on **pins 1-2** (Programmer Mode).</li>
+              <li><strong>Windows:</strong> Replace driver with **WinUSB** using <a href="https://zadig.akeo.ie/" target="_blank" class="text-indigo-400 hover:underline font-semibold">Zadig</a>.</li>
+              <li><strong>Linux:</strong> Add udev rule to allow writing to the USB port.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Area: Operations & Logs -->
+    <div class="lg:col-span-3 space-y-6">
+      
+      <!-- Operations Panel -->
+      <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-md">
+        <h2 class="text-md font-semibold mb-4 flex items-center gap-2 text-indigo-400 border-b border-slate-700 pb-2">
+          <i data-lucide="play" class="w-4 h-4"></i> Programmer Operations
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Flash Read / Erase Actions -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Dump & Clean</h3>
+            <div class="flex gap-2">
+              <button id="btn-read" disabled class="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white text-xs font-semibold py-2 px-3 rounded-lg transition flex items-center justify-center gap-1">
+                <i data-lucide="download-cloud" class="w-3.5 h-3.5"></i> Read Chip
+              </button>
+              <button id="btn-erase" disabled class="flex-1 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 disabled:hover:bg-rose-600 text-white text-xs font-semibold py-2 px-3 rounded-lg transition flex items-center justify-center gap-1">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Erase Chip
+              </button>
+            </div>
+          </div>
+
+          <!-- Flash Write Actions -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Write & Verify</h3>
+            <div class="flex gap-2 items-center">
+              <input id="file-input" type="file" class="hidden" accept=".bin,.rom,.hex,.img,*" />
+              <button id="btn-select-file" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold py-2 px-3 rounded-lg transition flex items-center gap-1 shrink-0">
+                <i data-lucide="file-up" class="w-3.5 h-3.5"></i> Load Bin File
+              </button>
+              <button id="btn-save-file" disabled class="bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2 px-3 rounded-lg transition flex items-center gap-1 shrink-0">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> Save Bin File
+              </button>
+              <span id="file-label" class="text-xs text-slate-400 truncate max-w-[100px] font-mono">No file</span>
+            </div>
+            <div class="flex gap-2">
+              <button id="btn-write" disabled class="flex-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 disabled:hover:bg-amber-600 text-white text-xs font-semibold py-2 px-3 rounded-lg transition flex items-center justify-center gap-1">
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Write Flash
+              </button>
+              <button id="btn-verify" disabled class="flex-1 bg-teal-600 hover:bg-teal-500 disabled:opacity-50 disabled:hover:bg-teal-600 text-white text-xs font-semibold py-2 px-3 rounded-lg transition flex items-center justify-center gap-1">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Verify
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="mt-4 space-y-1.5 hidden" id="progress-container">
+          <div class="flex justify-between text-[11px] font-semibold text-slate-400">
+            <span id="progress-status">Reading...</span>
+            <span id="progress-percentage">0%</span>
+          </div>
+          <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+            <div id="progress-bar" class="bg-indigo-500 h-full rounded-full transition-all duration-100" style="width: 0%"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-slate-500">
+            <span id="progress-speed">- KB/s</span>
+            <span id="progress-eta">ETA: -s</span>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Live Terminal / Log -->
+      <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-md flex flex-col h-[260px]">
+        <div class="flex justify-between items-center mb-2">
+          <h2 class="text-sm font-semibold flex items-center gap-2 text-indigo-400">
+            <i data-lucide="terminal" class="w-4 h-4"></i> Console Logs
+          </h2>
+          <button id="btn-clear-log" class="text-slate-400 hover:text-slate-200 text-xs flex items-center gap-1 transition">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Clear Log
+          </button>
+        </div>
+        <div id="console-log" class="flex-1 bg-slate-950/80 rounded-lg p-3 font-mono text-xs text-emerald-400 border border-slate-900 overflow-y-auto terminal-scroll space-y-1">
+          <div>Welcome to CH341A WebUSB Programmer.</div>
+          <div class="text-slate-400">Connect your programmer (jumper shorting pins 1-2) and click "Connect".</div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-800 border-t border-slate-700 py-3 text-center text-xs text-slate-500 mt-auto">
+    <p>CH341A WebUSB Programmer is a local browser app. All communication happens strictly over WebUSB inside your browser sandboxed environment.</p>
+  </footer>
+
+  <script>
+    // Force HTTPS to enable WebUSB API on local IP
+    if (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+      location.replace(location.href.replace('http:', 'https:'));
+    }
+
+    // Lucide Icons initialization
+    lucide.createIcons();
+
+    // Wire protocol helper definitions
+    const VID = 0x1a86;
+    const PID = 0x5512;
+    const WRITE_EP = 2;
+    const READ_EP = 2;
+
+    const CMD_SPI_STREAM = 0xa8;
+    const CMD_UIO_STREAM = 0xab;
+    const UIO_STM_OUT = 0x80;
+    const UIO_STM_DIR = 0x40;
+    const UIO_STM_END = 0x20;
+    const CMD_GET_STATUS = 0xa0;
+
+    const PACKET_LENGTH = 0x20; // 32
+    const DATA_PER_PACKET = PACKET_LENGTH - 1; // 31
+
+    // SPI Stream speed configs
+    const CH341A_CMD_I2C_STREAM = 0xaa;
+    const CH341A_CMD_I2C_STM_SET = 0x60;
+    const CH341A_CMD_I2C_STM_END = 0x00;
+    const CH341A_STM_I2C_100K = 0x01;
+
+    // Bit-reverse lookup table
+    function reverseByte(x) {
+      x &= 0xff;
+      x = ((x >> 1) & 0x55) | ((x << 1) & 0xaa);
+      x = ((x >> 2) & 0x33) | ((x << 2) & 0xcc);
+      x = ((x >> 4) & 0x0f) | ((x << 4) & 0xf0);
+      return x & 0xff;
+    }
+
+    // Logger utility
+    const consoleLog = document.getElementById('console-log');
+    function log(msg, type = 'info') {
+      const div = document.createElement('div');
+      const time = new Date().toLocaleTimeString();
+      let colorClass = 'text-slate-300';
+      if (type === 'success') colorClass = 'text-emerald-400 font-semibold';
+      if (type === 'error') colorClass = 'text-rose-400 font-semibold';
+      if (type === 'warn') colorClass = 'text-amber-400';
+      if (type === 'debug') colorClass = 'text-indigo-400';
+
+      div.className = colorClass;
+      div.innerHTML = `<span class="text-slate-600">[${time}]</span> ${msg}`;
+      consoleLog.appendChild(div);
+      consoleLog.scrollTop = consoleLog.scrollHeight;
+    }
+
+    // CH341 Driver Class
+    class CH341A_USB {
+      constructor(device) {
+        this.device = device;
+        this.dMode = 0;
+        this.dState = 0;
+        this.csPin = 0; // D0 is CS
+        this.csActiveLow = true;
+        this.interfaceNumber = 0;
+      }
+
+      async open() {
+        log("Opening USB connection...", 'info');
+        await this.device.open();
+        
+        try {
+          await this.device.selectConfiguration(1);
+        } catch (e) {
+          log("Select configuration warning: " + e.message, 'warn');
+        }
+
+        log("Claiming USB interface 0...", 'info');
+        await this.device.claimInterface(this.interfaceNumber);
+
+        // Configure speed
+        log("Configuring stream interface speed (100K)...", 'info');
+        await this.configStream(CH341A_STM_I2C_100K);
+
+        // Enable pins
+        log("Enabling output pins...", 'info');
+        await this.enablePins(true);
+
+        log("CH341A Programmer is ready!", 'success');
+      }
+
+      async close() {
+        try {
+          await this.enablePins(false);
+          await this.device.releaseInterface(this.interfaceNumber);
+          await this.device.close();
+          log("USB connection closed safely.", 'info');
+        } catch (e) {
+          log("Error closing device: " + e.message, 'error');
+        }
+      }
+
+      async _out(bytes) {
+        const r = await this.device.transferOut(WRITE_EP, bytes);
+        if (r.status !== "ok") throw new Error(`USB OUT Error: ${r.status}`);
+        return r.bytesWritten;
+      }
+
+      async _in(len) {
+        const r = await this.device.transferIn(READ_EP, len);
+        if (r.status !== "ok") throw new Error(`USB IN Error: ${r.status}`);
+        return new Uint8Array(r.data.buffer, r.data.byteOffset, r.data.byteLength);
+      }
+
+      async configStream(speed) {
+        const buf = new Uint8Array([
+          CH341A_CMD_I2C_STREAM,
+          CH341A_CMD_I2C_STM_SET | (speed & 0x7),
+          CH341A_CMD_I2C_STM_END
+        ]);
+        await this._out(buf);
+      }
+
+      async enablePins(enable) {
+        this.dState = 0x37; // CS high (all), SCK=0, DOUT*=1
+        this.dMode = enable ? 0x3F : 0x00;
+        const buf = new Uint8Array([
+          CMD_UIO_STREAM,
+          UIO_STM_OUT | (this.dState & 0x3f),
+          UIO_STM_DIR | (this.dMode & 0x3f),
+          UIO_STM_END
+        ]);
+        await this._out(buf);
+      }
+
+      async setCS(active) {
+        const level = this.csActiveLow ? (active ? 0 : 1) : (active ? 1 : 0);
+        if (level) {
+          this.dState |= (1 << this.csPin);
+        } else {
+          this.dState &= ~(1 << this.csPin);
+        }
+        const buf = new Uint8Array([
+          CMD_UIO_STREAM,
+          UIO_STM_OUT | (this.dState & 0x3f),
+          UIO_STM_DIR | (this.dMode & 0x3f),
+          UIO_STM_END
+        ]);
+        await this._out(buf);
+      }
+
+      // Transceive SPI stream
+      async transceive(writeBytes) {
+        const data = new Uint8Array(writeBytes);
+        await this.setCS(true);
+        try {
+          const packets = [];
+          for (let off = 0; off < data.length; off += DATA_PER_PACKET) {
+            const n = Math.min(DATA_PER_PACKET, data.length - off);
+            const pkt = new Uint8Array(1 + n);
+            pkt[0] = CMD_SPI_STREAM;
+            for (let i = 0; i < n; i++) pkt[1 + i] = reverseByte(data[off + i]);
+            packets.push(pkt);
+          }
+
+          const read = new Uint8Array(data.length);
+          let off = 0;
+          for (const pkt of packets) {
+            const dataLen = pkt.length - 1;
+            await this._out(pkt);
+            let got = 0;
+            while (got < dataLen) {
+              const r = await this._in(dataLen - got);
+              if (r.length === 0) break;
+              for (let i = 0; i < r.length; i++) {
+                read[off + got + i] = reverseByte(r[i]);
+              }
+              got += r.length;
+            }
+            off += dataLen;
+          }
+          return read;
+        } finally {
+          await this.setCS(false);
+        }
+      }
+    }
+
+    // UI Logic
+    let programmer = null;
+    let flashBuffer = null; // Buffer storing either read flash or selected file
+
+    const btnConnect = document.getElementById('btn-connect');
+    const btnDisconnect = document.getElementById('btn-disconnect');
+    const btnDetect = document.getElementById('btn-detect');
+    const btnRead = document.getElementById('btn-read');
+    const btnErase = document.getElementById('btn-erase');
+    const btnWrite = document.getElementById('btn-write');
+    const btnVerify = document.getElementById('btn-verify');
+    const btnClearLog = document.getElementById('btn-clear-log');
+    
+    const btnSelectFile = document.getElementById('btn-select-file');
+    const fileInput = document.getElementById('file-input');
+    const fileLabel = document.getElementById('file-label');
+
+    const infoProduct = document.getElementById('info-product');
+    const infoSerial = document.getElementById('info-serial');
+    const infoSpeed = document.getElementById('info-speed');
+    const connectionBadge = document.getElementById('connection-badge');
+    const connectionStatusText = document.getElementById('connection-status-text');
+    const badgeDot = document.getElementById('badge-dot');
+
+    const chipJedec = document.getElementById('chip-jedec');
+    const chipVendor = document.getElementById('chip-vendor');
+    const chipName = document.getElementById('chip-name');
+    const chipSize = document.getElementById('chip-size');
+    const inputOverrideSize = document.getElementById('input-override-size');
+
+    const progressContainer = document.getElementById('progress-container');
+    const progressStatus = document.getElementById('progress-status');
+    const progressPercentage = document.getElementById('progress-percentage');
+    const progressBar = document.getElementById('progress-bar');
+    const progressSpeed = document.getElementById('progress-speed');
+    const progressEta = document.getElementById('progress-eta');
+
+     const btnSaveFile = document.getElementById('btn-save-file');
+
+    // JEDEC Chip Database (loaded dynamically from chips.json)
+    let JEDEC_DB = {};
+
+    async function loadChipDatabase() {
+      try {
+        log("Loading community JEDEC database (chips.json)...", 'info');
+        const res = await fetch('chips.json');
+        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+        JEDEC_DB = await res.json();
+        log("JEDEC chip database loaded successfully.", 'success');
+      } catch (e) {
+        log("Failed to load chips.json database. Fallback to minimal detection.", 'warn');
+        // fallback
+        JEDEC_DB = {
+          "239": {
+            "name": "Winbond",
+            "chips": {
+              "16408": { "name": "W25Q128 (Fallback)", "size": 16777216 }
+            }
+          }
+        };
+      }
+    }
+
+    // Load chip DB on load
+    window.addEventListener('DOMContentLoaded', loadChipDatabase);
+
+    function updateConnectionState(connected) {
+      if (connected) {
+        connectionBadge.className = "flex items-center space-x-1.5 bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded-full text-xs font-semibold";
+        badgeDot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+        connectionStatusText.textContent = "Connected";
+        
+        btnConnect.disabled = true;
+        btnDisconnect.disabled = false;
+        btnDetect.disabled = false;
+        btnRead.disabled = false;
+        btnErase.disabled = false;
+        if (flashBuffer) {
+          btnWrite.disabled = false;
+          btnVerify.disabled = false;
+        }
+      } else {
+        connectionBadge.className = "flex items-center space-x-1.5 bg-rose-950/40 border border-rose-500/30 text-rose-400 px-3 py-1.5 rounded-full text-xs font-semibold";
+        badgeDot.className = "w-2 h-2 rounded-full bg-rose-500 animate-pulse";
+        connectionStatusText.textContent = "Disconnected";
+        
+        btnConnect.disabled = false;
+        btnDisconnect.disabled = true;
+        btnDetect.disabled = true;
+        btnRead.disabled = true;
+        btnErase.disabled = true;
+        btnWrite.disabled = true;
+        btnVerify.disabled = true;
+        
+        infoProduct.textContent = "-";
+        infoSerial.textContent = "-";
+        infoSpeed.textContent = "-";
+      }
+    }
+
+    // Connect Button
+    btnConnect.addEventListener('click', async () => {
+      try {
+        log("Requesting USB device access...", 'info');
+        const device = await navigator.usb.requestDevice({
+          filters: [{ vendorId: VID, productId: PID }]
+        });
+        
+        programmer = new CH341A_USB(device);
+        await programmer.open();
+        
+        infoProduct.textContent = device.productName || "CH341A";
+        infoSerial.textContent = device.serialNumber || "Unknown";
+        infoSpeed.textContent = "100 kHz (SPI)";
+        
+        updateConnectionState(true);
+      } catch (e) {
+        log("Connection failed: " + e.message, 'error');
+        updateConnectionState(false);
+      }
+    });
+
+    // Disconnect Button
+    btnDisconnect.addEventListener('click', async () => {
+      if (programmer) {
+        await programmer.close();
+        programmer = null;
+      }
+      updateConnectionState(false);
+    });
+
+    // File selection wrapper
+    btnSelectFile.addEventListener('click', () => fileInput.click());
+
+    // File input handling
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        flashBuffer = new Uint8Array(reader.result);
+        fileLabel.textContent = `${file.name} (${(flashBuffer.length / 1024).toFixed(1)} KB)`;
+        log(`Loaded local file: ${file.name} (${flashBuffer.length} bytes)`, 'info');
+        inputOverrideSize.value = flashBuffer.length;
+        btnSaveFile.disabled = false;
+
+        if (programmer) {
+          btnWrite.disabled = false;
+          btnVerify.disabled = false;
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    // Clear Log
+    btnClearLog.addEventListener('click', () => {
+      consoleLog.innerHTML = '';
+      log("Log cleared.");
+    });
+
+    // JEDEC Chip detection
+    btnDetect.addEventListener('click', async () => {
+      if (!programmer) return;
+      try {
+        log("Reading JEDEC ID (command 9Fh)...", 'info');
+        const response = await programmer.transceive([0x9F, 0x00, 0x00, 0x00]);
+        const mfg = response[1];
+        const memType = response[2];
+        const cap = response[3];
+        const deviceId = (memType << 8) | cap;
+
+        const jedecStr = `${mfg.toString(16).toUpperCase().padStart(2, '0')} ${memType.toString(16).toUpperCase().padStart(2, '0')} ${cap.toString(16).toUpperCase().padStart(2, '0')}`;
+        chipJedec.textContent = jedecStr;
+        log(`JEDEC ID read: ${jedecStr}`, 'success');
+
+        if (mfg === 0x00 || mfg === 0xFF) {
+          log("Invalid JEDEC ID. Check pin connections or chip insertion.", 'warn');
+          chipVendor.textContent = "Unknown";
+          chipName.textContent = "Unknown";
+          chipSize.textContent = "Unknown";
+          return;
+        }
+
+        const mfgInfo = JEDEC_DB[mfg];
+        if (mfgInfo) {
+          chipVendor.textContent = mfgInfo.name;
+          const chipInfo = mfgInfo.chips[deviceId];
+          if (chipInfo) {
+            chipName.textContent = chipInfo.name;
+            chipSize.textContent = `${(chipInfo.size / (1024 * 1024))} MB (${chipInfo.size} Bytes)`;
+            inputOverrideSize.value = chipInfo.size;
+            log(`Detected Chip: ${mfgInfo.name} ${chipInfo.name} (${chipInfo.size / (1024 * 1024)}MB)`, 'success');
+          } else {
+            chipName.textContent = `Unknown (0x${deviceId.toString(16).toUpperCase()})`;
+            chipSize.textContent = "Unknown";
+            log(`Known manufacturer (${mfgInfo.name}) but unknown device ID: 0x${deviceId.toString(16).toUpperCase()}`, 'warn');
+          }
+        } else {
+          chipVendor.textContent = `Unknown (0x${mfg.toString(16).toUpperCase()})`;
+          chipName.textContent = `Unknown (0x${deviceId.toString(16).toUpperCase()})`;
+          chipSize.textContent = "Unknown";
+          log(`Unknown Manufacturer prefix: 0x${mfg.toString(16).toUpperCase()}`, 'warn');
+        }
+      } catch (e) {
+        log("Chip detection failed: " + e.message, 'error');
+      }
+    });
+
+    // Download buffer function
+    function downloadBuffer() {
+      if (!flashBuffer || flashBuffer.length === 0) return;
+      const blob = new Blob([flashBuffer], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `flash_binary_${Date.now()}.bin`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      log("Binary file download triggered.", 'success');
+    }
+
+    btnSaveFile.addEventListener('click', downloadBuffer);
+
+    // SPI Flash chip support functions
+    async function waitNotBusy() {
+      let loops = 0;
+      while (true) {
+        const res = await programmer.transceive([0x05, 0x00]);
+        const status = res[1];
+        if ((status & 0x01) === 0) return;
+        loops++;
+        if (loops > 20000) throw new Error("Timeout waiting for chip to clear busy status.");
+        await new Promise(r => setTimeout(r, 1));
+      }
+    }
+
+    async function writeEnable() {
+      await programmer.transceive([0x06]);
+    }
+
+    // Read flash chip operation
+    btnRead.addEventListener('click', async () => {
+      if (!programmer) return;
+      const totalSize = parseInt(inputOverrideSize.value, 10);
+      if (isNaN(totalSize) || totalSize <= 0) {
+        log("Invalid chip size.", 'error');
+        return;
+      }
+
+      progressContainer.classList.remove('hidden');
+      log(`Starting read operation of ${totalSize} bytes...`, 'info');
+      
+      const flashData = new Uint8Array(totalSize);
+      const chunkSize = 2048; // SPI stream chunks
+      let bytesRead = 0;
+      const startTime = Date.now();
+
+      try {
+        btnRead.disabled = true;
+        btnErase.disabled = true;
+        btnWrite.disabled = true;
+        btnVerify.disabled = true;
+
+        while (bytesRead < totalSize) {
+          const nowRead = Math.min(chunkSize, totalSize - bytesRead);
+          
+          // Send Read Data command 03h + 3-byte address
+          const cmd = new Uint8Array(4 + nowRead);
+          cmd[0] = 0x03;
+          cmd[1] = (bytesRead >> 16) & 0xFF;
+          cmd[2] = (bytesRead >> 8) & 0xFF;
+          cmd[3] = bytesRead & 0xFF;
+
+          const res = await programmer.transceive(cmd);
+          // Slice off command + address overhead
+          const readChunk = res.slice(4);
+          flashData.set(readChunk, bytesRead);
+          
+          bytesRead += nowRead;
+
+          // Update Progress
+          const pct = Math.round((bytesRead / totalSize) * 100);
+          progressPercentage.textContent = `${pct}%`;
+          progressBar.style.width = `${pct}%`;
+          progressStatus.textContent = `Reading address: 0x${bytesRead.toString(16).toUpperCase()}`;
+
+          const elapsedSecs = (Date.now() - startTime) / 1000;
+          const speedKB = ((bytesRead / 1024) / elapsedSecs).toFixed(1);
+          progressSpeed.textContent = `${speedKB} KB/s`;
+          
+          const eta = Math.round((totalSize - bytesRead) / (bytesRead / elapsedSecs));
+          progressEta.textContent = `ETA: ${eta}s`;
+        }
+
+        log(`Read successful in ${((Date.now() - startTime) / 1000).toFixed(1)} seconds!`, 'success');
+        
+        // Save to active flashBuffer
+        flashBuffer = flashData;
+        
+        fileLabel.textContent = `Flash Dump (${(flashBuffer.length / 1024).toFixed(1)} KB)`;
+        btnSaveFile.disabled = false;
+        downloadBuffer();
+
+      } catch (e) {
+        log("Read failed: " + e.message, 'error');
+      } finally {
+        progressContainer.classList.add('hidden');
+        btnRead.disabled = false;
+        btnErase.disabled = false;
+        btnDetect.disabled = false;
+        if (flashBuffer) {
+          btnWrite.disabled = false;
+          btnVerify.disabled = false;
+        }
+      }
+    });
+
+    // Erase Flash operation (Sector-by-sector 4KB)
+    btnErase.addEventListener('click', async () => {
+      if (!programmer) return;
+      const totalSize = parseInt(inputOverrideSize.value, 10);
+      if (isNaN(totalSize) || totalSize <= 0) {
+        log("Invalid chip size.", 'error');
+        return;
+      }
+
+      if (!confirm(`Erase entire chip of ${totalSize / (1024 * 1024)}MB sector-by-sector?`)) {
+        return;
+      }
+
+      progressContainer.classList.remove('hidden');
+      log(`Starting Sector Erase (20h) of ${totalSize} bytes...`, 'info');
+      const startTime = Date.now();
+
+      try {
+        btnRead.disabled = true;
+        btnErase.disabled = true;
+        btnWrite.disabled = true;
+        btnVerify.disabled = true;
+
+        const sectorSize = 4096;
+        let addr = 0;
+
+        while (addr < totalSize) {
+          progressStatus.textContent = `Erasing sector at address: 0x${addr.toString(16).toUpperCase()}`;
+          const pct = Math.round((addr / totalSize) * 100);
+          progressPercentage.textContent = `${pct}%`;
+          progressBar.style.width = `${pct}%`;
+
+          const elapsedSecs = (Date.now() - startTime) / 1000;
+          const speedKB = ((addr / 1024) / elapsedSecs).toFixed(1);
+          progressSpeed.textContent = `${speedKB} KB/s`;
+          const eta = Math.round((totalSize - addr) / (addr / elapsedSecs));
+          progressEta.textContent = `ETA: ${eta || 0}s`;
+
+          // 1. Write Enable
+          await writeEnable();
+          // 2. Erase Sector (20h)
+          const cmd = new Uint8Array([
+            0x20,
+            (addr >> 16) & 0xFF,
+            (addr >> 8) & 0xFF,
+            addr & 0xFF
+          ]);
+          await programmer.transceive(cmd);
+          // 3. Wait for busy bit to clear
+          await waitNotBusy();
+
+          addr += sectorSize;
+        }
+
+        progressPercentage.textContent = "100%";
+        progressBar.style.width = "100%";
+        log(`Erase successful in ${((Date.now() - startTime) / 1000).toFixed(1)} seconds!`, 'success');
+
+      } catch (e) {
+        log("Erase failed: " + e.message, 'error');
+      } finally {
+        progressContainer.classList.add('hidden');
+        btnRead.disabled = false;
+        btnErase.disabled = false;
+        if (flashBuffer) {
+          btnWrite.disabled = false;
+          btnVerify.disabled = false;
+        }
+      }
+    });
+
+    // Write operation (Page Program 256 bytes)
+    btnWrite.addEventListener('click', async () => {
+      if (!programmer || !flashBuffer) return;
+      const totalSize = parseInt(inputOverrideSize.value, 10);
+      if (flashBuffer.length > totalSize) {
+        if (!confirm(`Warning: The selected file (${flashBuffer.length} bytes) is larger than the chip size (${totalSize} bytes). Truncate the file during write?`)) {
+          return;
+        }
+      }
+
+      progressContainer.classList.remove('hidden');
+      log("Initiating Flash Write...", 'info');
+      log("Step 1: Erasing target space...", 'warn');
+      const startTime = Date.now();
+
+      try {
+        btnRead.disabled = true;
+        btnErase.disabled = true;
+        btnWrite.disabled = true;
+        btnVerify.disabled = true;
+
+        const writeLength = Math.min(flashBuffer.length, totalSize);
+        
+        // Erase phase
+        const sectorSize = 4096;
+        let eraseAddr = 0;
+        while (eraseAddr < writeLength) {
+          progressStatus.textContent = `Erasing sector: 0x${eraseAddr.toString(16).toUpperCase()}`;
+          const pct = Math.round((eraseAddr / writeLength) * 50); // 0 to 50%
+          progressPercentage.textContent = `${pct}%`;
+          progressBar.style.width = `${pct}%`;
+
+          await writeEnable();
+          await programmer.transceive([
+            0x20,
+            (eraseAddr >> 16) & 0xFF,
+            (eraseAddr >> 8) & 0xFF,
+            eraseAddr & 0xFF
+          ]);
+          await waitNotBusy();
+          eraseAddr += sectorSize;
+        }
+        log("Erase phase complete. Step 2: Page Programming...", 'info');
+
+        // Write phase
+        const pageSize = 256;
+        let writeAddr = 0;
+        while (writeAddr < writeLength) {
+          progressStatus.textContent = `Writing page: 0x${writeAddr.toString(16).toUpperCase()}`;
+          const pct = Math.round(50 + ((writeAddr / writeLength) * 50)); // 50 to 100%
+          progressPercentage.textContent = `${pct}%`;
+          progressBar.style.width = `${pct}%`;
+
+          const elapsedSecs = (Date.now() - startTime) / 1000;
+          const speedKB = ((writeAddr / 1024) / elapsedSecs).toFixed(1);
+          progressSpeed.textContent = `${speedKB} KB/s`;
+          const eta = Math.round((writeLength - writeAddr) / (writeAddr / elapsedSecs));
+          progressEta.textContent = `ETA: ${eta || 0}s`;
+
+          // Write Enable
+          await writeEnable();
+
+          // Page Program (02h) + 3 address bytes + data bytes
+          const nowWrite = Math.min(pageSize, writeLength - writeAddr);
+          const cmd = new Uint8Array(4 + nowWrite);
+          cmd[0] = 0x02;
+          cmd[1] = (writeAddr >> 16) & 0xFF;
+          cmd[2] = (writeAddr >> 8) & 0xFF;
+          cmd[3] = writeAddr & 0xFF;
+          for (let i = 0; i < nowWrite; i++) {
+            cmd[4 + i] = flashBuffer[writeAddr + i];
+          }
+
+          await programmer.transceive(cmd);
+          await waitNotBusy();
+
+          writeAddr += nowWrite;
+        }
+
+        progressPercentage.textContent = "100%";
+        progressBar.style.width = "100%";
+        log(`Write successful! Total time: ${((Date.now() - startTime) / 1000).toFixed(1)} seconds.`, 'success');
+
+      } catch (e) {
+        log("Write failed: " + e.message, 'error');
+      } finally {
+        progressContainer.classList.add('hidden');
+        btnRead.disabled = false;
+        btnErase.disabled = false;
+        btnWrite.disabled = false;
+        btnVerify.disabled = false;
+      }
+    });
+
+    // Verify operation (Verify Chip Content against Loaded File)
+    btnVerify.addEventListener('click', async () => {
+      if (!programmer || !flashBuffer) return;
+      const totalSize = parseInt(inputOverrideSize.value, 10);
+      const verifyLen = Math.min(flashBuffer.length, totalSize);
+
+      progressContainer.classList.remove('hidden');
+      log(`Starting Verification of ${verifyLen} bytes...`, 'info');
+      const startTime = Date.now();
+
+      try {
+        btnRead.disabled = true;
+        btnErase.disabled = true;
+        btnWrite.disabled = true;
+        btnVerify.disabled = true;
+
+        const chunkSize = 2048;
+        let bytesVerified = 0;
+        let mismatchCount = 0;
+
+        while (bytesVerified < verifyLen) {
+          const nowVerify = Math.min(chunkSize, verifyLen - bytesVerified);
+          
+          progressStatus.textContent = `Verifying address: 0x${bytesVerified.toString(16).toUpperCase()}`;
+          const pct = Math.round((bytesVerified / verifyLen) * 100);
+          progressPercentage.textContent = `${pct}%`;
+          progressBar.style.width = `${pct}%`;
+
+          // Read command (03h)
+          const cmd = new Uint8Array(4 + nowVerify);
+          cmd[0] = 0x03;
+          cmd[1] = (bytesVerified >> 16) & 0xFF;
+          cmd[2] = (bytesVerified >> 8) & 0xFF;
+          cmd[3] = bytesVerified & 0xFF;
+
+          const res = await programmer.transceive(cmd);
+          const readChunk = res.slice(4);
+
+          for (let i = 0; i < nowVerify; i++) {
+            if (readChunk[i] !== flashBuffer[bytesVerified + i]) {
+              mismatchCount++;
+              if (mismatchCount < 10) {
+                log(`Mismatch at 0x${(bytesVerified + i).toString(16).toUpperCase()}: File=0x${flashBuffer[bytesVerified + i].toString(16).toUpperCase().padStart(2, '0')}, Flash=0x${readChunk[i].toString(16).toUpperCase().padStart(2, '0')}`, 'error');
+              }
+            }
+          }
+
+          bytesVerified += nowVerify;
+
+          const elapsedSecs = (Date.now() - startTime) / 1000;
+          const speedKB = ((bytesVerified / 1024) / elapsedSecs).toFixed(1);
+          progressSpeed.textContent = `${speedKB} KB/s`;
+        }
+
+        if (mismatchCount === 0) {
+          log("Verification SUCCESS! Chip content matches loaded file perfectly.", 'success');
+        } else {
+          log(`Verification FAILED! Found ${mismatchCount} mismatched bytes.`, 'error');
+        }
+
+      } catch (e) {
+        log("Verification failed: " + e.message, 'error');
+      } finally {
+        progressContainer.classList.add('hidden');
+        btnRead.disabled = false;
+        btnErase.disabled = false;
+        btnWrite.disabled = false;
+        btnVerify.disabled = false;
+      }
+    });
+
+  </script>
+</body>
+</html>
